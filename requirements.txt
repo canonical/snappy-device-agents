@@ -1,4 +1,4 @@
-PyYAML==3.13
+PyYAML==6.0
 netifaces==0.11.0
 python-logstash==0.4.8
 # For the spi-agent
