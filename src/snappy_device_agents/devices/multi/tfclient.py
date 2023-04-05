@@ -108,6 +108,22 @@ class TFClient:
             state = "unknown"
         return state
 
+    def get_results(self, job_id):
+        """Get the results of a test job
+
+        :param job_id:
+            ID for the test job
+        :return:
+            dict containing the results for the specified ID
+        """
+        try:
+            endpoint = f"/v1/result/{job_id}"
+            data = json.loads(self.get(endpoint))
+        except OSError:
+            logger.exception("Unable to get results for job %s", job_id)
+            data = {}
+        return data
+
     def submit_job(self, job_data):
         """Submit a test job to the testflinger server
 

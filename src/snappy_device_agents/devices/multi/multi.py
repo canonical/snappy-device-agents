@@ -14,6 +14,7 @@
 
 """Ubuntu multi-device support code."""
 
+import json
 import logging
 import os
 import time
@@ -66,14 +67,44 @@ class Multi:
                         "Job %s failed to allocate, cancelling remaining jobs",
                         job,
                     )
-                    self.cancel_jobs()
+                    self.cancel_jobs(self.jobs)
                     raise ProvisioningError("Unable to allocate all devices")
             # Timeout if we've been waiting too long for devices to allocate
             if time.time() - start_time > allocation_timeout:
-                self.cancel_jobs()
+                self.cancel_jobs(self.jobs)
                 raise ProvisioningError(
                     "Timed out waiting for devices to allocate"
                 )
+
+    def save_job_list_file(self):
+        """
+        get the "device_info" dict from the results for each job in self.jobs
+        Create a job_list.json file with a list of jobs that looks like:
+        [
+            {
+                "job_id": "1234",
+                "device_info": {
+                    "device_ip": "10.1.1.1"
+                }
+            },
+            {
+                "job_id": "5678",
+                "device_info": {
+                    "device_ip": "10.1.1.2"
+            }
+        ]
+        """
+        job_list = []
+        for job in self.jobs:
+            device_info = self.client.get_results(job).get("device_info")
+            job_list.append(
+                {
+                    "job_id": job,
+                    "device_info": device_info,
+                }
+            )
+        with open("job_list.json", "w") as json_file:
+            json.dump(job_list, json_file)
 
     def create_jobs(self):
         """Create the jobs for the multi-device agent"""
@@ -91,7 +122,7 @@ class Multi:
                 job_id = self.client.submit_job(job)
             except OSError as exc:
                 logger.exception("Unable to create job: %s", job_id)
-                self.cancel_jobs()
+                self.cancel_jobs(self.jobs)
                 raise ProvisioningError(
                     f"Unable to create job: {job_id}"
                 ) from exc
@@ -99,9 +130,9 @@ class Multi:
             logger.info("Created job %s", job_id)
             self.jobs.append(job_id)
 
-    def cancel_jobs(self):
-        """Try to cancel any jobs that were created"""
-        for job in self.jobs:
+    def cancel_jobs(self, jobs):
+        """Cancel all jobs in the specified list of job_ids"""
+        for job in jobs:
             try:
                 self.client.cancel_job(job)
             except OSError:
