@@ -25,11 +25,11 @@ class ConfigureMaasStorage:
         self.maas_profile = maas_profile
         self.node_id = node_id
 
-    def local(self):
+    def call_cmd(self):
         """subprocess placeholder"""
         pass
 
-    def local_parse_json(self):
+    def call_cmd_json(self):
         """subprocess placeholder"""
         pass
 
@@ -41,7 +41,7 @@ class ConfigureMaasStorage:
             if blockdevice["type"] == "virtual":
                 continue
             for partition in blockdevice["partitions"]:
-                self.local(
+                self.call_cmd(
                     [
                         "maas",
                         self.maas_profile,
@@ -54,7 +54,7 @@ class ConfigureMaasStorage:
                 )
             if blockdevice["filesystem"] is not None:
                 if blockdevice["filesystem"]["mount_point"] is not None:
-                    self.local_parse_json(
+                    self.call_cmd_json(
                         [
                             "maas",
                             self.maas_profile,
@@ -64,7 +64,7 @@ class ConfigureMaasStorage:
                             str(blockdevice["id"]),
                         ]
                     )
-                self.local_parse_json(
+                self.call_cmd_json(
                     [
                         "maas",
                         self.maas_profile,
@@ -74,7 +74,7 @@ class ConfigureMaasStorage:
                         blockdevice["id"],
                     ]
                 )
-                self.local_parse_json(
+                self.call_cmd_json(
                     [
                         "maas",
                         self.maas_profile,
@@ -86,7 +86,7 @@ class ConfigureMaasStorage:
                 )
 
     def mount_blockdevice(self, blockdevice_id, mount_point):
-        self.local_parse_json(
+        self.call_cmd_json(
             [
                 "maas",
                 self.maas_profile,
@@ -99,7 +99,7 @@ class ConfigureMaasStorage:
         )
 
     def mount_partition(self, blockdevice_id, partition_id, mount_point):
-        self.local_parse_json(
+        self.call_cmd_json(
             [
                 "maas",
                 self.maas_profile,
@@ -113,7 +113,7 @@ class ConfigureMaasStorage:
         )
 
     def format_partition(self, blockdevice_id, partition_id, fstype, label):
-        self.local_parse_json(
+        self.call_cmd_json(
             [
                 "maas",
                 self.maas_profile,
@@ -138,10 +138,10 @@ class ConfigureMaasStorage:
         ]
         if size is not None:
             command.append(f"size={size}")
-        return self.local_parse_json(command)
+        return self.call_cmd_json(command)
 
     def set_boot_disk(self, blockdevice_id):
-        self.local(
+        self.call_cmd(
             [
                 "maas",
                 self.maas_profile,
@@ -172,10 +172,10 @@ class ConfigureMaasStorage:
         if opts is not None:
             for k, v in opts.items():
                 command.append(f"{k}={v}")
-        return self.local_parse_json(command)
+        return self.call_cmd_json(command)
 
     def format_blockdevice(self, blockdevice_id, fstype, label):
-        self.local_parse_json(
+        self.call_cmd_json(
             [
                 "maas",
                 self.maas_profile,
@@ -197,7 +197,7 @@ class ConfigureMaasStorage:
             self.node_id,
         ]
 
-        cache_sets = self.local_parse_json(command)
+        cache_sets = self.call_cmd_json(command)
 
         for cache_set in cache_sets:
             # multiple cache devices per cache set are not supported
@@ -236,9 +236,10 @@ class ConfigureMaasStorage:
             command.append(f"cache_device={blockdevice_id}")
         else:
             command.append(f"cache_partition={partition_id}")
-        return self.local_parse_json(command)
+        return self.call_cmd_json(command)
 
     def create_bcache(
+        self,
         name,
         cache_set_id,
         blockdevice_id,
@@ -259,11 +260,11 @@ class ConfigureMaasStorage:
             command.append(f"backing_device={blockdevice_id}")
         else:
             command.append(f"backing_partition={partition_id}")
-        return self.local_parse_json(command)
+        return self.call_cmd_json(command)
 
     def read_bcaches(self):
         command = ["maas", self.maas_profile, "bcaches", "read", self.node_id]
-        return self.local_parse_json(command)
+        return self.call_cmd_json(command)
 
     def create_volume_group(self, name, block_devices=None, partitions=None):
         command = [
@@ -281,7 +282,7 @@ class ConfigureMaasStorage:
         if partitions:
             for partition in partitions:
                 command.append(f"partitions={partition}")
-        return self.local_parse_json(command)
+        return self.call_cmd_json(command)
 
     def create_logical_volume(self, volume_group, name=None, size=None):
         command = [
@@ -294,7 +295,7 @@ class ConfigureMaasStorage:
             f"name={name}",
             f"size={size}",
         ]
-        return self.local_parse_json(command)
+        return self.call_cmd_json(command)
 
     def read_blockdevices(self):
         command = [
@@ -304,7 +305,7 @@ class ConfigureMaasStorage:
             "read",
             self.node_id,
         ]
-        return self.local_parse_json(command)
+        return self.call_cmd_json(command)
 
     def get_disksize_real_value(self, value):
         """Sizes can use M, G, T suffixes."""
@@ -368,7 +369,7 @@ class ConfigureMaasStorage:
                     self.node_id,
                     name=lv["name"],
                     volume_group=vgs[lv["volgroup"]],
-                    size=get_disksize_real_value(lv["size"]),
+                    size=self.get_disksize_real_value(lv["size"]),
                 )
                 lv_to_blockdevice[lv["id"]] = new_lv
         return lv_to_blockdevice
@@ -389,8 +390,9 @@ class ConfigureMaasStorage:
             if "size" not in partition or not partition["size"]:
                 disksize_value = None
             else:
-                disksize_value = get_disksize_real_value(partition["size"])
-            partition_id = create_partition(
+                disksize_value = self.get_disksize_real_value(partition["size"])
+
+            partition_id = self.create_partition(
                 self.self.maas_profile,
                 self.node_id,
                 str(disk_maas_id),
