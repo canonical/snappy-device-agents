@@ -16,11 +16,11 @@
 
 import logging
 import subprocess
+
 logger = logging.getLogger()
 
 
 class ConfigureMaasStorage:
-
     def __init__(self, maas_profile, node_id):
         self.maas_profile = maas_profile
         self.node_id = node_id
@@ -34,7 +34,9 @@ class ConfigureMaasStorage:
         pass
 
     def clear_storage_config(self):
-        blockdevice_set = self.read_blockdevices(self.maas_profile, self.node_id)
+        blockdevice_set = self.read_blockdevices(
+            self.maas_profile, self.node_id
+        )
         for blockdevice in blockdevice_set:
             if blockdevice["type"] == "virtual":
                 continue
@@ -110,9 +112,7 @@ class ConfigureMaasStorage:
             ]
         )
 
-    def format_partition(
-        self, blockdevice_id, partition_id, fstype, label
-    ):
+    def format_partition(self, blockdevice_id, partition_id, fstype, label):
         self.local_parse_json(
             [
                 "maas",
@@ -189,7 +189,13 @@ class ConfigureMaasStorage:
         )
 
     def get_cache_set(self, blockdevice_id, partition_id):
-        command = ["maas", self.maas_profile, "bcache-cache-sets", "read", self.node_id]
+        command = [
+            "maas",
+            self.maas_profile,
+            "bcache-cache-sets",
+            "read",
+            self.node_id,
+        ]
 
         cache_sets = self.local_parse_json(command)
 
@@ -201,17 +207,31 @@ class ConfigureMaasStorage:
             backing_device_id = cache_device["id"]
 
             if backing_type not in ["physical", "partition"]:
-                raise Exception("Unknown backing device type %s" % (backing_type))
-            elif backing_type == "physical" and blockdevice_id == backing_device_id:
+                raise Exception(
+                    "Unknown backing device type %s" % (backing_type)
+                )
+            elif (
+                backing_type == "physical"
+                and blockdevice_id == backing_device_id
+            ):
                 return cache_set
-            elif backing_type == "partition" and partition_id == backing_device_id:
+            elif (
+                backing_type == "partition"
+                and partition_id == backing_device_id
+            ):
                 return cache_set
 
         # no cache sets
         return None
 
     def create_cache_set(self, blockdevice_id, partition_id):
-        command = ["maas", self.maas_profile, "bcache-cache-sets", "create", self.node_id]
+        command = [
+            "maas",
+            self.maas_profile,
+            "bcache-cache-sets",
+            "create",
+            self.node_id,
+        ]
         if blockdevice_id is not None:
             command.append(f"cache_device={blockdevice_id}")
         else:
@@ -245,9 +265,7 @@ class ConfigureMaasStorage:
         command = ["maas", self.maas_profile, "bcaches", "read", self.node_id]
         return self.local_parse_json(command)
 
-    def create_volume_group(
-        self, name, block_devices=None, partitions=None
-    ):
+    def create_volume_group(self, name, block_devices=None, partitions=None):
         command = [
             "maas",
             self.maas_profile,
@@ -279,7 +297,13 @@ class ConfigureMaasStorage:
         return self.local_parse_json(command)
 
     def read_blockdevices(self):
-        command = ["maas", self.maas_profile, "block-devices", "read", self.node_id]
+        command = [
+            "maas",
+            self.maas_profile,
+            "block-devices",
+            "read",
+            self.node_id,
+        ]
         return self.local_parse_json(command)
 
     def get_disksize_real_value(self, value):
@@ -307,7 +331,9 @@ class ConfigureMaasStorage:
         """Setup LVM volume groups on a specific machine."""
         vgs = {}
         for vg in self.entries_of_type(disk_config, "lvm_volgroup"):
-            logging.info("setting up volume group %s on %s", vg["id"], self.node_id)
+            logging.info(
+                "setting up volume group %s on %s", vg["id"], self.node_id
+            )
             block_devices = []
             partitions = []
             self.append_disk_or_partition(
@@ -333,7 +359,9 @@ class ConfigureMaasStorage:
         """Setup LVM logical volumes on a specific machine."""
         lv_to_blockdevice = {}
         for lv in self.entries_of_type(disk_config, "lvm_partition"):
-            logging.info("setting up logical volume %s on %s", lv["id"], self.node_id)
+            logging.info(
+                "setting up logical volume %s on %s", lv["id"], self.node_id
+            )
             if lv["volgroup"] in vgs:
                 new_lv = self.create_logical_volume(
                     self.self.maas_profile,
@@ -353,15 +381,20 @@ class ConfigureMaasStorage:
         # maps config partition ids to maas partition ids
         partition_map = {}
         for partition in partitions:
-            disk_maas_id = disk_device_to_blockdevice[partition["device"]]["id"]
+            disk_maas_id = disk_device_to_blockdevice[partition["device"]][
+                "id"
+            ]
             logging.info("creating partition %s", partition["id"])
             # If size is not specified, all avaiable space is used
-            if "size" not in partition or not  partition["size"]:
+            if "size" not in partition or not partition["size"]:
                 disksize_value = None
             else:
                 disksize_value = get_disksize_real_value(partition["size"])
             partition_id = create_partition(
-                self.self.maas_profile, self.node_id, str(disk_maas_id), size=disksize_value
+                self.self.maas_profile,
+                self.node_id,
+                str(disk_maas_id),
+                size=disksize_value,
             )["id"]
             partition_map[partition["id"]] = {
                 "partition_id": partition_id,
@@ -408,7 +441,9 @@ class ConfigureMaasStorage:
             config["disks"], config_disk_to_blockdevice
         )
         # apply updates to the disks.
-        self.update_disks(self.node_id, config["disks"], disk_device_to_blockdevice)
+        self.update_disks(
+            self.node_id, config["disks"], disk_device_to_blockdevice
+        )
         # partition disks and keep map of config partitions
         # to partition ids in maas
         partition_map = self.partition_disks(
@@ -418,7 +453,10 @@ class ConfigureMaasStorage:
         disk_device_to_blockdevice.update(raid_to_blockdevice)
         # setup bcaches first, to make volumes on top of bcache possible
         self.setup_bcaches(
-            self.node_id, config["disks"], disk_device_to_blockdevice, partition_map
+            self.node_id,
+            config["disks"],
+            disk_device_to_blockdevice,
+            partition_map,
         )
         lv_to_blockdevice = self.setup_lvm_lv(
             self.node_id,
@@ -426,14 +464,23 @@ class ConfigureMaasStorage:
             disk_device_to_blockdevice,
             partition_map,
             vgs=self.setup_lvm_vg(
-                self.node_id, config["disks"], disk_device_to_blockdevice, partition_map
+                self.node_id,
+                config["disks"],
+                disk_device_to_blockdevice,
+                partition_map,
             ),
         )
         disk_device_to_blockdevice.update(lv_to_blockdevice)
         # format volumes and create mount points
         self.apply_formats(
-            self.node_id, config["disks"], partition_map, disk_device_to_blockdevice
+            self.node_id,
+            config["disks"],
+            partition_map,
+            disk_device_to_blockdevice,
         )
         self.create_mounts(
-            self.node_id, config["disks"], partition_map, disk_device_to_blockdevice
+            self.node_id,
+            config["disks"],
+            partition_map,
+            disk_device_to_blockdevice,
         )
