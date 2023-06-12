@@ -146,14 +146,14 @@ class Multi:
             try:
                 job_id = self.client.submit_job(job)
             except OSError as exc:
-                logger.exception("Unable to create job: %s", job_id)
+                logger.exception("Unable to create job: %s", job)
                 self.cancel_jobs(self.jobs)
                 raise ProvisioningError(
-                    f"Unable to create job: {job_id}"
+                    f"Unable to create job: {job}"
                 ) from exc
-
-            logger.info("Created job %s", job_id)
-            self.jobs.append(job_id)
+            else:
+                logger.info("Created job %s", job_id)
+                self.jobs.append(job_id)
 
     def inject_allocate_data(self, job):
         """Inject the allocate_data section into the job
