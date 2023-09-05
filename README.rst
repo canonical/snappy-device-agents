@@ -1,7 +1,7 @@
-Snappy Device Agents
+Testflinger Device Agents
 ####################
 
-Device agents scripts for provisioning and running tests on Snappy
+Device agents scripts for provisioning and running tests on Testflinger
 devices
 
 Supported Devices
