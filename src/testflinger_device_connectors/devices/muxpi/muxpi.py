@@ -250,7 +250,7 @@ class MuxPi:
 
         try:
             disk_info_path = (
-                self.mount_point / "writable/lib/firmware/*-tegra/"
+                self.mount_point / "writable/lib/firmware/*-tegra*/"
             )
             self._run_control(f"ls {disk_info_path} &>/dev/null")
             return "tegra"
