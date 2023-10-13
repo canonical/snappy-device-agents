@@ -16,6 +16,8 @@ requires-python = ">=3.8"
 dependencies = [
     "PyYAML>=3.11",
     "requests",
+    "wrapt_timeout_decorator",
+    "paramiko",
 ]
 
 [project.scripts]

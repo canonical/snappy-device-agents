@@ -21,6 +21,8 @@ import time
 
 import yaml
 
+from wrapt_timeout_decorator import timeout
+
 from testflinger_device_connectors.devices import (
     ProvisioningError,
     RecoveryError,
@@ -89,6 +91,73 @@ class OemRecovery:
         self._run_cmd_list(recovery_cmds)
         self.check_device_booted()
 
+    @timeout(dec_timeout=3600)
+    def check_boot_state(self):
+        """check boot state"""
+        try:
+            test_username = self.job_data.get("test_data", {}).get(
+                "test_username", "ubuntu"
+            )
+            test_password = self.job_data.get("test_data", {}).get(
+                "test_password", "ubuntu"
+            )
+        except AttributeError:
+            test_username = "ubuntu"
+            test_password = "ubuntu"
+
+        while True:
+            try:
+                image_type = (
+                    subprocess.check_output(
+                        (
+                            "sshpass -p {} ssh -o StrictHostKeyChecking=no "
+                            "-o UserKnownHostsFile=/dev/null "
+                            "{}@{} snap model | grep model"
+                        ).format(
+                            test_password,
+                            test_username,
+                            self.config["device_ip"],
+                        ),
+                        shell=True,
+                    )
+                ).decode()
+            except subprocess.SubprocessError:
+                time.sleep(10)
+                continue
+            except Exception:
+                time.sleep(10)
+                continue
+
+            if image_type.find("generic-classic") != -1:
+                return
+
+            else:
+                while True:
+                    try:
+                        boot_state = (
+                            subprocess.check_output(
+                                (
+                                    "sshpass -p {} ssh "
+                                    "-o StrictHostKeyChecking=no "
+                                    "-o UserKnownHostsFile=/dev/null "
+                                    "{}@{} snap changes "
+                                    '| grep "Initialize device"'
+                                ).format(
+                                    test_password,
+                                    test_username,
+                                    self.config["device_ip"],
+                                ),
+                                shell=True,
+                            )
+                        ).decode()
+
+                        if boot_state != "" and boot_state.find("Done") != -1:
+                            return
+                    except subprocess.SubprocessError:
+                        time.sleep(10)
+                    except Exception:
+                        time.sleep(10)
+
     def copy_ssh_id(self):
         """Copy the ssh id to the device"""
         try:
@@ -121,11 +190,14 @@ class OemRecovery:
         # Wait for provisioning to complete - can take a very long time
         while time.time() - started < 3600:
             try:
-                time.sleep(90)
+                self.check_boot_state()
                 self.copy_ssh_id()
                 return True
             except subprocess.SubprocessError:
                 pass
+            except TimeoutError:
+                pass
+
         # If we get here, then we didn't boot in time
         agent_name = self.config.get("agent_name")
         logger.error(
