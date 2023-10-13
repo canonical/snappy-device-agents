@@ -69,7 +69,7 @@ class LVFSDevice(AbstractDevice):
         logmsg(logging.INFO, "collect firmware info")
         self.run_cmd("sudo fwupdmgr refresh --force")
         rc, stdout, stderr = self.run_cmd("sudo fwupdmgr get-devices --json")
-        logmsg(logging.DEBUG,f"$fwupdmgr get-devices = \n{stdout}")
+        logmsg(logging.DEBUG, f"$fwupdmgr get-devices = \n{stdout}")
         self._parse_fwupd_raw(stdout)
 
     def _install_fwupd(self):
@@ -138,7 +138,6 @@ class LVFSDevice(AbstractDevice):
                         logging.INFO,
                         f"[{dev_name}] try upgrading to {latest_ver['Version']}",
                     )
-                    
                     dev["targetVersion"] = latest_ver["Version"]
                     rc, stdout, stderr = self.run_cmd(
                         f"sudo fwupdmgr upgrade {dev['DeviceId']} -y --no-reboot-check",
@@ -196,7 +195,8 @@ class LVFSDevice(AbstractDevice):
                         rc == 0 or (rc == 1 and "already exists" in stderr)
                     ):
                         raise RuntimeError(
-                            f"[{dev_name}] fail to download firmware file from LVFS\ntarget: {prev_ver['Uri']}\nerror: {stdout}"
+                            f"[{dev_name}] fail to download firmware file from LVFS"
+                            f"target: {prev_ver['Uri']}\nerror: {stdout}"
                         )
                     rc, stdout, stderr = self.run_cmd(
                         f"sudo fwupdmgr install {fw_file} -y --no-reboot-check --allow-older",
@@ -207,7 +207,7 @@ class LVFSDevice(AbstractDevice):
                         reboot = True
                     else:
                         logmsg(
-                            logging.ERROR, 
+                            logging.ERROR,
                             f"[{dev_name}] fail to force install (downgrade) firmware {fw_file}",
                         )
                         logmsg(logging.DEBUG, stdout)
@@ -278,7 +278,10 @@ class LVFSDevice(AbstractDevice):
 
         :param timeout: wait time for regaining DUT access
         """
-        logmsg(logging.INFO, f"check and wait for {timeout}s until SSH is connectable")
+        logmsg(
+            logging.INFO,
+            f"check and wait for {timeout}s until {self.ipaddr} is SSHable",
+        )
         status = "1"
         timeout_start = time.time()
 
@@ -302,11 +305,3 @@ class LVFSDevice(AbstractDevice):
         time.sleep(10)
         self.check_connectable(self.reboot_timeout)
 
-
-class LenovoNB(LVFSDevice):
-    """
-    Place-holder for device class for Lenovo Notebook devices which requires
-    battery attached for flashing firmware
-    """
-    fw_update_type = "LVFS-ext"
-    vendor = ["LENOVO"]
