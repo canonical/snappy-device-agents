@@ -13,4 +13,3 @@ __all__ = [
     "HPEDevice",
     "logmsg",
 ]
-

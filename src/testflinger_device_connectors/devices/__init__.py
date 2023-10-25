@@ -347,4 +347,3 @@ def load_devices():
 
 if __name__ == "__main__":
     load_devices()
-

@@ -42,4 +42,3 @@ class AbstractDevice(ABC):
     @abstractmethod
     def reboot(self):
         raise NotImplementedError("Please, implement the reboot method")
-

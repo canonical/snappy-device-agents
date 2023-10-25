@@ -3,8 +3,8 @@
 
 import unittest
 import json
-from testflinger_device_connectors.fw_devices import *
 from unittest.mock import patch
+from testflinger_device_connectors.fw_devices import LVFSDevice
 from testflinger_device_connectors.fw_devices.LVFS.tests import fwupd_data
 
 device_results = json.loads(fwupd_data.GET_RESULTS_RESPONSE_DATA)
@@ -23,7 +23,9 @@ class TestLVFSDevice(unittest.TestCase):
         Test if upgrade function returns True. And test if downgrade function
         returns False.
         """
-        with patch("testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd") as mock_path:
+        with patch(
+            "testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd"
+        ) as mock_path:
             mock_path.side_effect = self.mock_run_cmd
             device = LVFSDevice("", "", "")
             device._parse_fwupd_raw(fwupd_data.GET_DEVICES_RESPONSE_DATA)
@@ -36,7 +38,9 @@ class TestLVFSDevice(unittest.TestCase):
         Test if upgrade function returns False. And test if downgrade function
         returns True.
         """
-        with patch("testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd") as mock_path:
+        with patch(
+            "testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd"
+        ) as mock_path:
             mock_path.side_effect = self.mock_run_cmd
             device = LVFSDevice("", "", "")
 
@@ -53,7 +57,9 @@ class TestLVFSDevice(unittest.TestCase):
     def test_check_results_failed_state(self):
         """Validate UpdateState check in check_results"""
         global device_results
-        with patch("testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd") as mock_path:
+        with patch(
+            "testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd"
+        ) as mock_path:
             mock_path.side_effect = self.mock_run_cmd
             device = LVFSDevice("", "", "")
             device._parse_fwupd_raw(fwupd_data.GET_DEVICES_RESPONSE_DATA)
@@ -65,7 +71,9 @@ class TestLVFSDevice(unittest.TestCase):
     def test_check_results_mismatched_version(self):
         """Validate version check in check_results"""
         global device_results
-        with patch("testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd") as mock_path:
+        with patch(
+            "testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd"
+        ) as mock_path:
             mock_path.side_effect = self.mock_run_cmd
             device = LVFSDevice("", "", "")
             device._parse_fwupd_raw(fwupd_data.GET_DEVICES_RESPONSE_DATA)
@@ -75,7 +83,9 @@ class TestLVFSDevice(unittest.TestCase):
     def test_check_results_good(self):
         """Test if check_results works with a valid case"""
         global device_results
-        with patch("testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd") as mock_path:
+        with patch(
+            "testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd"
+        ) as mock_path:
             mock_path.side_effect = self.mock_run_cmd
             device = LVFSDevice("", "", "")
             device._parse_fwupd_raw(fwupd_data.GET_DEVICES_RESPONSE_DATA)
@@ -91,7 +101,9 @@ class TestLVFSDevice(unittest.TestCase):
         get-results```
         """
         global device_results
-        with patch("testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd") as mock_path:
+        with patch(
+            "testflinger_device_connectors.fw_devices.LVFSDevice.run_cmd"
+        ) as mock_path:
             mock_path.side_effect = self.mock_run_cmd
             device = LVFSDevice("", "", "")
             device._parse_fwupd_raw(fwupd_data.GET_DEVICES_RESPONSE_DATA)

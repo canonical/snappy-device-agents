@@ -3,7 +3,12 @@
 import subprocess
 import logging
 from testflinger_device_connectors.fw_devices.dmi import Dmi
-from testflinger_device_connectors.fw_devices import *
+from testflinger_device_connectors.fw_devices import (
+    AbstractDevice,
+    LVFSDevice,
+    OEMDevice,
+)
+from testflinger_device_connectors import logmsg
 
 
 SSH_OPTS = "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
@@ -82,4 +87,3 @@ def detect_device(
     elif issubclass(dev, OEMDevice):
         logmsg(logging.INFO, err_msg)
         raise RuntimeError(err_msg)
-
