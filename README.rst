@@ -1,3 +1,5 @@
+⚠️ This project is being archived and development has moved in to the repo `here <https://github.com/canonical/testflinger/tree/main/device-connectors>`_ ⚠️
+
 Testflinger Device Connectors
 ####################
 
